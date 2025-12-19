@@ -40,7 +40,7 @@ This engine ties together various data sources to provide a comprehensive respon
 ### Elastic Scalability & Optimal Retrieval
 
 The system is built for production use and is designed to scale effortlessly from a small personal project to a large enterprise codebase.
-- **Vector Database:** A specialized vector database like **Pinecone** or **Milvus** stores the semantic embeddings of code snippets and documentation. This is critical for the fast and accurate retrieval required by the semantic search component.
+- **Vector Database:** A specialized vector database (Weaviate in this case) that stores the semantic embeddings of code snippets and documentation. This is critical for the fast and accurate retrieval required by the semantic search component.
 - **Serverless Architecture:** The entire search agent is deployed on a **serverless platform** (e.g., Vercel, AWS Lambda). This model provides **elastic scalability**, automatically provisioning resources to handle varying query loads without the need for manual server management. It also adheres to a pay-as-you-go billing model, reducing operational costs.
 
 ### Agentic Framework
