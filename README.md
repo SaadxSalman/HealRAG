@@ -59,3 +59,59 @@ To orchestrate the complex workflow, the project utilizes an **agentic framework
 6.  **Output:** The final result is displayed to the user in a rich format, including code blocks, links to source documentation, and explanatory text.
 
 ---
+
+### 📂 Project Structure
+
+```text
+synapsesearch-agent/
+├── client/                      # Next.js Frontend (Vercel)
+│   ├── src/
+│   │   ├── app/                 
+│   │   │   ├── layout.tsx       # Global providers (Theme, Auth)
+│   │   │   ├── page.tsx         # Main Search Interface
+│   │   │   └── history/         # Route for viewing past chats
+│   │   ├── components/          
+│   │   │   ├── chat/
+│   │   │   │   ├── SearchBar.tsx
+│   │   │   │   ├── ResponseView.tsx # Markdown renderer for AI code
+│   │   │   │   └── SourceBadge.tsx  # Link to GitHub/Docs
+│   │   │   └── layout/
+│   │   │       └── Sidebar.tsx      # MongoDB Session History
+│   │   ├── hooks/               
+│   │   │   └── useAgent.ts      # Logic to handle streaming responses
+│   │   └── lib/                 
+│   │       └── utils.ts         # Tailwind merging & formatting
+│   ├── tailwind.config.ts
+│   └── package.json
+│
+├── server/                      # Node.js/Express Backend (Serverless)
+│   ├── src/
+│   │   ├── agents/              # Cognitive Layer (LangChain)
+│   │   │   ├── intentAgent.ts   # Query classification
+│   │   │   ├── retrievalAgent.ts# Weaviate Hybrid Search
+│   │   │   └── synthesisAgent.ts# RAG Final Output
+│   │   ├── controllers/         
+│   │   │   ├── searchController.ts
+│   │   │   └── historyController.ts
+│   │   ├── models/              
+│   │   │   └── ChatHistory.ts   # MongoDB Schemas
+│   │   ├── routes/              
+│   │   │   ├── search.ts
+│   │   │   └── history.ts
+│   │   ├── services/            
+│   │   │   └── vectorStore.ts   # Weaviate Client initialization
+│   │   ├── utils/               
+│   │   │   └── logger.ts
+│   │   └── index.ts             # Express App Entry
+│   ├── .env                     # Secret Keys (OpenAI, Mongo, Weaviate)
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── scripts/                     # Data Pipelines
+│   └── ingestData.ts            # Local codebase -> Weaviate Vectorizer
+│
+└── README.md                    # Project documentation
+
+```
+
+---
