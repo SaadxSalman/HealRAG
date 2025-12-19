@@ -46,13 +46,3 @@ To orchestrate the complex workflow, the project utilizes an **agentic framework
 6.  **Output:** The final result is displayed to the user in a rich format, including code blocks, links to source documentation, and explanatory text.
 
 ---
-
-## 🤝 Contribution
-
-Contributions are highly encouraged! Please feel free to open an issue or submit a pull request on my GitHub repository, **saadsalmanakram/SynapseSearch-Agent**, to help build the future of intelligent code assistance.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the `LICENSE.md` file for details.
