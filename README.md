@@ -4,6 +4,19 @@
 
 ---
 
+## 🛠️ Tech Stack
+
+The project is built with a modern, high-performance stack designed for type safety, scalability, and a seamless developer experience:
+
+* **Framework:** [Next.js](https://nextjs.org/) (App Router) — Providing server-side rendering and optimal performance.
+* **Frontend:** [React](https://reactjs.org/) — For building a dynamic and responsive user interface.
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/) — A utility-first CSS framework for rapid and consistent UI development.
+* **Language:** [TypeScript](https://www.typescriptlang.org/) — Ensuring robust, type-safe code across the entire MERN stack.
+* **Backend:** [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) — Powering the agentic workflow and API orchestration.
+* **Database:** [MongoDB](https://www.mongodb.com/) — For flexible, document-based storage of user preferences and session data.
+
+---
+
 ## ⚙️ Key Components
 
 ### Cognitive Comprehension
