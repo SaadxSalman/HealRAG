@@ -1,0 +1,99 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.dmypy.json
+.dmypy_cache/
+.pyre/
+.pytype/
+.pyc/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+*.cover
+.hypothesis/
+.cache/
+
+# ===== Secrets & Environment =====
+# NEVER commit real secrets. See .env.example for the template.
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.pem
+*.key
+*.crt
+
+# ===== Runtime Data & Artifacts =====
+# ChromaDB vector store lives here (rebuilt at runtime)
+chroma_db/
+chroma/
+*.sqlite3
+*.db
+*.duckdb
+data/documents/private/
+artifacts/
+outputs/
+*.log
+logs/
+*.png
+!**/assets/*.png
+
+# ===== ML / Models =====
+model_cache/
+models/
+*.onnx
+*.bin
+*.h5
+*.pt
+*.pth
+*.gguf
+*.safetensors
+
+# ===== Packaging / Build =====
+build/
+dist/
+*.egg-info/
+.eggs/
+*.whl
+*.tar.gz
+*.zip
+
+# ===== IDEs & OS =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===== Notebooks checkpoints =====
+.ipynb_checkpoints/
+
+# ===== Streamlit =====
+.streamlit/secrets.toml
+.streamlit/*
+!.streamlit/config.toml
+
+# ===== Jupyter =====
+*.ipynb

@@ -1,0 +1,43 @@
+# ===== Core runtime =====
+python-dotenv>=1.0.1
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# ===== LLM / Orchestration =====
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-ollama>=1.0.0
+langgraph>=0.2.0
+
+# ===== Vector store =====
+chromadb>=0.5.0
+
+# ===== Embeddings / ML =====
+ollama>=0.3.0
+numpy>=1.26.0
+# Optional local embedding backend (uncomment if EMBEDDING_BACKEND=sentence_transformers)
+# sentence-transformers>=3.0.0
+# torch>=2.3.0
+
+# ===== BM25 / lexical fallback =====
+rank-bm25>=0.2.2
+
+# ===== Web API =====
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# ===== UI =====
+streamlit>=1.36.0
+
+# ===== Documents / utils =====
+pypdf>=4.2.0
+docx2txt>=0.8
+beautifulsoup4>=4.12.0
+markdown>=3.6.0
+httpx>=0.27.0
+
+# ===== Tests =====
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
