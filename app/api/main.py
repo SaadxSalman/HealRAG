@@ -47,6 +47,7 @@ async def startup() -> None:
     """Validate prerequisites and keep the BM25 index in sync on boot."""
     from app.agents.retriever import get_retriever
     from app.core.llm import get_ollama_client
+    from app.core.vector_store import get_vector_store
 
     retriever = get_retriever()
     retriever.sync_bm25()

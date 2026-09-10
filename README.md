@@ -176,11 +176,22 @@ A **`RelevanceGrader`** asks the SLM to grade *each chunk independently*:
 The grader runs at **temperature 0** with Ollama's `format=json`, so routing
 becomes deterministic and cheap. `accepted = score ≥ threshold`.
 
+Small local models don't always emit perfectly shaped JSON, so the grader
+**normalizes off-spec responses** instead of silently zeroing them: alternate
+score keys (`relevance`, `rating`, `usefulness`), string-typed numbers, missing
+verdicts (inferred from the score), and accept-without-score (defaults to 0.7)
+are all handled; a truly unusable response is rejected with the raw payload
+recorded in the chunk's `reason` for debugging.
+
 ### Layer 3 — Corrective steering (`app/agents/rewriter.py`)
 If the accepted set is empty (or below `MIN_ACCEPTED`), LangGraph routes to
 **`rewrite`**: the `QueryRewriter` produces a sharp, noun-heavy search query and
 the retriever hits the **BM25 keyword index** (blended with vectors when BM25 is
-thin). The new chunks are graded again. This cycle is bounded by
+thin). The new chunks are graded again. If the model lazily echoes the original
+query back, the rewriter nudges it once for a materially different variant.
+Chunks accepted by earlier passes are preserved (deduped by id), and the cycle
+is bounded by `MAX_QUERY_REWRITES`.
+
 ### Layer 4 — Grounded generation (`app/agents/generator.py`)
 The generator receives **only accepted chunks** formatted as a numbered context
 block with source labels. The system prompt forbids outside knowledge, demands
@@ -199,10 +210,12 @@ context and returns:
 
 ### Layer 6 — Correction on failure (`app/agents/graph.py`)
 On **fail**, `corrective_rerefetch` runs an **expanded hybrid retrieval**
-(larger `K` from both dense + BM25), feeds the fresh chunks into the state, and
-**regenerates** with the unsupported claims passed back as refinement feedback.
-Bounded by `MAX_HALLUCINATION_RETRIES`; the best attempt is returned with a
-flagging note in corrections when it still fails.
+(larger `K` from both dense + BM25). Fresh chunks are deduped against
+everything already seen (by id *and* text), **graded like any other chunk**,
+and accepted ones are merged into the context before regeneration with the
+unsupported claims passed back as refinement feedback. Bounded by
+`MAX_HALLUCINATION_RETRIES`; the best attempt is returned with a flagging note
+in corrections when it still fails.
 
 ---
 
@@ -737,7 +750,7 @@ def _citation_node(state):
 | `Could not reach Ollama at http://localhost:11434` | Ollama isn't running. Start it (Windows tray icon / `ollama serve`). |
 | `Model 'qwen3:8b' not found` | Run `ollama pull qwen3:8b` (and `nomic-embed-text`). |
 | `/ask` returns *"vector store is empty"* | Seed first: `python -m app.scripts.seed_data`. |
-| Grades are always `reject` | Lower `RELEVANCE_THRESHOLD`, or check the corpus actually covers the question. |
+| Grades are always `reject` | First check the corpus actually covers the question — the grader is *deliberately strict*, and refusing to answer from unrelated sections is correct anti-hallucination behavior. Lower `RELEVANCE_THRESHOLD` only if the corpus genuinely contains the answer. |
 | Embedding model changed → collection rebuilt | Expected — ChromaDB metadata detects the mismatch and rebuilds automatically. |
 | Slow runtime on CPU | Use a smaller grader (`phi4-mini`), raise `RETRIEVAL_K` less aggressively, or reduce `MAX_*` budgets. |
 | ChromaDB version conflicts | Keep `chromadb>=0.5` and `rank-bm25>=0.2.2`; avoid mixing pre-built artifacts. |

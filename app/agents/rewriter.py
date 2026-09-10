@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.config import settings
+from app.core.error_handling import logger
 from app.core.llm import get_ollama_client
 
 REWRITE_SYSTEM = """You are an expert search-query rewriter. Rewrite the user's question to make it
@@ -38,7 +39,26 @@ class QueryRewriter:
             temperature=settings.rewriter_temperature,
             max_tokens=120,
         )
-        rewritten = str(raw.get("rewritten", query)).strip()
+        rewritten = str(raw.get("rewritten") or raw.get("query") or "").strip() or query
+        # A rewrite identical to the original is useless in a corrective loop —
+        # nudge the model once for a materially different variant.
+        if rewritten.strip().lower() == query.strip().lower():
+            try:
+                raw2 = self.client.chat_json(
+                    f"ORIGINAL: {query}\n"
+                    "FEEDBACK: your previous rewrite was identical to the original. "
+                    "Produce a clearly different, keyword-focused variant.\n"
+                    "Rewrite this query.",
+                    system=REWRITE_SYSTEM,
+                    model=settings.ollama_chat_model,
+                    temperature=max(0.5, settings.rewriter_temperature),
+                    max_tokens=120,
+                )
+                alt = str(raw2.get("rewritten") or raw2.get("query") or "").strip()
+                if alt and alt.lower() != query.strip().lower():
+                    rewritten = alt
+            except Exception as exc:  # nudging is best-effort
+                logger.warning("Rewrite nudge failed: %s", exc)
         # Never return an empty rewrite; fall back to the original.
         return rewritten or query
 

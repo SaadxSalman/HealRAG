@@ -30,9 +30,20 @@ def test_chroma_path_resolves_to_project():
 
 
 def test_secrets_templated_not_committed():
-    """Real secrets must live in .env only (never committed)."""
+    """Real secrets must live in .env only (never committed to git)."""
+    import subprocess
+
     from app.config import PROJECT_ROOT
 
     ignores = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
     assert ".env" in ignores
-    assert (PROJECT_ROOT / ".env").exists() is False  # nothing secret committed
+    assert (PROJECT_ROOT / ".env.example").exists()  # template present
+
+    # Git must both ignore .env and never track it, even if it exists locally.
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True
+        ).stdout
+
+    assert git("check-ignore", ".env").strip() == ".env"      # ignored
+    assert git("ls-files").splitlines().count(".env") == 0    # never tracked

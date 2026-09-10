@@ -114,13 +114,21 @@ def _rewrite_node(state: GraphState) -> dict:
 
     grader = RelevanceGrader()
     graded = grader.grade_batch(new_query, [c.to_dict() for c in bm25_chunks])
+    # Keep any chunks accepted by earlier passes (dedupe by id) so a lucky
+    # earlier grade is not lost when a later rewrite grades everything low.
+    prev_accepted = list(state.get("accepted_chunks", []) or [])
+    merged_accepted = prev_accepted + [
+        c
+        for c in graded
+        if c.get("accepted") and all(c.get("id") != a.get("id") for a in prev_accepted)
+    ]
     rewritten_queries = state.get("rewritten_queries", []) + [new_query]
     return {
         "active_query": new_query,
         "rewrite_count": count,
         "rewritten_queries": rewritten_queries,
         "chunks": graded,
-        "accepted_chunks": [c for c in graded if c.get("accepted")],
+        "accepted_chunks": merged_accepted,
         "corrections": state.get("corrections", [])
         + [f"query rewritten ({count}): '{last_query}' -> '{new_query}' (BM25 fallback)"],
         "steps": ["rewrite"],
@@ -184,11 +192,31 @@ def _corrective_rerefetch_node(state: GraphState) -> dict:
     chunks = retriever.retrieve_hybrid(
         query, vector_k=settings.retrieval_k + 2, bm25_k=settings.bm25_k + 2
     )
-    existing_texts = {c.get("text") for c in state.get("accepted_chunks", [])}
-    fresh = [c.to_dict() for c in chunks if c.text not in existing_texts]
+    # Never re-add anything already seen this run (id or text) — duplicate
+    # context wastes tokens and double-cites the same passage.
+    seen_ids = {c.get("id") for c in state.get("chunks", [])}
+    seen_texts = {c.get("text") for c in state.get("chunks", [])}
+    fresh = [
+        c.to_dict()
+        for c in chunks
+        if c.id not in seen_ids and c.text not in seen_texts
+    ]
+    # Grade the fresh chunks so the regeneration pass can actually use them.
+    accepted = list(state.get("accepted_chunks", []) or [])
+    if fresh:
+        grader = RelevanceGrader()
+        fresh = grader.grade_batch(query, fresh)
+        newly = [c for c in fresh if c.get("accepted")]
+        if newly:
+            accepted = accepted + [
+                c
+                for c in newly
+                if all(c.get("id") != a.get("id") for a in accepted)
+            ]
     return {
         "retries": count,
         "chunks": state.get("chunks", []) + fresh,
+        "accepted_chunks": accepted,
         "corrections": state.get("corrections", [])
         + [f"hallucination re-retrieval pass #{count}: broadened to {len(fresh)} new chunk(s)"],
         "steps": ["corrective_rerefetch"],

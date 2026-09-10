@@ -53,12 +53,18 @@ class PipelineResult:
     def add_step(self, name: str) -> None:
         self.steps.append(name)
 
+    @staticmethod
+    def _chunk_to_dict(c: Any) -> Dict[str, Any]:
+        """Chunks may be Chunk objects (direct API use) or plain dicts
+        (as produced by the LangGraph state) — normalize both."""
+        return c.to_dict() if hasattr(c, "to_dict") else dict(c)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "query": self.query,
             "rewritten_queries": self.rewritten_queries,
-            "chunks": [c.to_dict() for c in self.chunks],
-            "accepted_chunks": [c.to_dict() for c in self.accepted_chunks],
+            "chunks": [self._chunk_to_dict(c) for c in self.chunks],
+            "accepted_chunks": [self._chunk_to_dict(c) for c in self.accepted_chunks],
             "answer": self.answer,
             "grade": self.grade,
             "hallucination_grade": self.hallucination_grade,

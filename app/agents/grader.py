@@ -52,6 +52,44 @@ Return STRICT JSON with EXACTLY these keys:
 
 _FENCE = "'''"
 
+# Keys some SLMs emit instead of the canonical "score".
+_SCORE_KEYS = ("score", "relevance", "rating", "usefulness")
+
+
+def _extract_score(raw: Dict[str, Any]) -> Optional[float]:
+    """Pull a 0..10 score out of possibly off-spec JSON, clamped to [0, 1].
+
+    Returns ``None`` when no numeric score-like field is present.
+    """
+    for key in _SCORE_KEYS:
+        value = raw.get(key)
+        if value is None:
+            continue
+        try:
+            return _clamp01(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _derive_verdict(
+    raw: Dict[str, Any],
+    score: Optional[float],
+    positive: str,
+    negative: str,
+    positive_cutoff: float,
+) -> Optional[str]:
+    """Normalize the verdict; infer it from the score when missing/invalid.
+
+    Returns ``None`` only when neither a usable verdict nor a score exists.
+    """
+    verdict = str(raw.get("verdict", "")).lower().strip()
+    if verdict in (positive, negative):
+        return verdict
+    if score is not None:
+        return positive if score >= positive_cutoff else negative
+    return None
+
 
 def _build_relevance_prompt(query: str, chunk_id: str, chunk_text: str) -> str:
     return (
@@ -95,12 +133,18 @@ class RelevanceGrader:
             temperature=settings.grader_temperature,
             max_tokens=300,
         )
-        verdict = str(raw.get("verdict", "reject")).lower().strip()
-        score_raw = raw.get("score", 0)
+        score = _extract_score(raw)
+        verdict = _derive_verdict(raw, score, "accept", "reject", 0.5)
+        if verdict == "accept" and score is None:
+            # Accept-without-score: assume moderately relevant.
+            score = 0.7
+        if verdict is None:
+            raise ValueError(f"unusable grader JSON: {str(raw)[:200]}")
+        reason = str(raw.get("reason") or raw.get("explanation") or "").strip()
         return {
-            "relevance": _clamp01(score_raw),
-            "verdict": verdict if verdict in ("accept", "reject") else "reject",
-            "reason": str(raw.get("reason", "")).strip(),
+            "relevance": score if score is not None else 0.0,
+            "verdict": verdict,
+            "reason": reason,
         }
 
     def grade_batch(
@@ -113,7 +157,11 @@ class RelevanceGrader:
                 result = self.grade_chunk(query, c["id"], c["text"])
             except Exception as exc:  # a grading failure should not kill the run
                 logger.warning("Grading chunk %s failed: %s", c["id"], exc)
-                result = {"relevance": 0.0, "verdict": "reject", "reason": "grading error"}
+                result = {
+                    "relevance": 0.0,
+                    "verdict": "reject",
+                    "reason": f"grading error: {exc}",
+                }
             c = {**c, **result}
             c["accepted"] = result["verdict"] == "accept"
             graded.append(c)
@@ -151,15 +199,18 @@ class HallucinationGrader:
             }
 
         claims = raw.get("unsupported_claims", [])
-        score = _clamp01(raw.get("score", 0))
-        verdict = str(raw.get("verdict", "fail")).lower().strip()
-        if verdict not in ("pass", "fail"):
-            verdict = "pass" if score >= 0.7 else "fail"
+        score = _extract_score(raw)
+        verdict = _derive_verdict(raw, score, "pass", "fail", 0.7)
+        if verdict == "pass" and score is None:
+            score = 0.8
+        if verdict is None:
+            # Nothing usable in the response — fail closed.
+            score, verdict = 0.0, "fail"
         return {
-            "score": score,
+            "score": score if score is not None else 0.0,
             "verdict": verdict,
             "unsupported_claims": claims if isinstance(claims, list) else [str(claims)],
-            "reason": str(raw.get("reason", "")).strip(),
+            "reason": str(raw.get("reason") or raw.get("explanation") or "").strip(),
         }
 
 

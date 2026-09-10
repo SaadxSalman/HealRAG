@@ -46,6 +46,7 @@ htmlcov/
 # ChromaDB vector store lives here (rebuilt at runtime)
 chroma_db/
 chroma/
+traces/
 *.sqlite3
 *.db
 *.duckdb
