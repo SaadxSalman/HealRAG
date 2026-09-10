@@ -349,7 +349,7 @@ from `.env` (which is **gitignored**; never commit it). Copy `.env.example` to
 | `GRADER_TEMPERATURE` | `0.0` | Deterministic grading |
 | `API_HOST` / `API_PORT` | `0.0.0.0` / `8000` | FastAPI bind address |
 | `API_BEARER_TOKEN` | _(empty)_ | If set, every API call needs `Authorization: Bearer <token>` |
-| `CORS_ORIGINS` | `["http://localhost:8501"]` | Allowed UI origins |
+| `CORS_ORIGINS` | `["http://localhost:8501","http://localhost:3000"]` | Allowed UI origins |
 | `TRACE_DIR` | `./traces` | Per-query trace JSON output |
 
 **Secrets in the environment** (this is the only place credentials belong):
@@ -422,9 +422,12 @@ What you get:
 
 | Service | URL |
 |---------|-----|
-| Streamlit UI | <http://localhost:8501> |
+| Streamlit UI | <http://localhost:3000> |
 | FastAPI docs (Swagger) | <http://localhost:8000/docs> |
 | Health check | <http://localhost:8000/health> |
+
+> The UI defaults to port **3000** (set via `STREAMLIT_SERVER_PORT` in `.env`);
+> CORS is pre-configured for it. Change the variable if that port is taken.
 
 A quick smoke test via curl/powershell after startup:
 
